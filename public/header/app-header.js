@@ -20,12 +20,13 @@ export class AppHeader extends LitElement {
                 align-items: center;
                 
                 background-color: #303e4c;
-                
+                border-radius: 25px;
             }
-
+            
             @media (max-width: 800px) {
                 .header {
                     flex-direction: column;
+                    border-radius: 0px;
                 }
 
                 .header-logo {
@@ -65,7 +66,6 @@ export class AppHeader extends LitElement {
                 opacity: 1;
             }
             
-            
             .search-button {
                 padding: 10px;
                 background: #ffa400;
@@ -73,6 +73,10 @@ export class AppHeader extends LitElement {
                 border-left: none;
                 cursor: pointer;
                 border-radius: 0px 25px 25px 0px;
+            }
+
+            .search-button:hover {
+                background: #dd9e30;
             }
             
             .search-icon {
