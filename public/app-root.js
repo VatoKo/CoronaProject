@@ -1,5 +1,7 @@
 import {LitElement, html, css} from "lit-element";
 import { AppHeader } from "./header/app-header";
+import { AppHomeFavorites} from "./favorites/app-home-favorites";
+import { AppHomeDashboard } from "./dashboard/app-home-dashboard";
 
 export class AppRoot extends LitElement {
 
@@ -18,6 +20,21 @@ export class AppRoot extends LitElement {
             :host {
                 display: block;
             }
+
+            .home-container {
+                padding: 16px 0 16px 0;
+                display: flex;
+                flex-direction: row;
+            }
+            
+            .home-favorites {
+                
+            }
+            
+            .dashboard-container {
+                flex: 1;
+            }
+            
         `;
     }
 
@@ -25,6 +42,20 @@ export class AppRoot extends LitElement {
         // language=html
         return html`
             <app-header></app-header>
+            
+            <div class="home-container">
+                
+                <div>
+                    <app-home-favorites class="home-favorites"></app-home-favorites>
+                </div>
+                
+                <div class="dashboard-container">
+                    <app-home-dashboard class="home-dashboard"></app-home-dashboard>
+                </div>
+                
+                
+            </div>
+            
         `;
     }
 
