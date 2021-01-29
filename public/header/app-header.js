@@ -108,8 +108,14 @@ export class AppHeader extends LitElement {
 
     searchHandler() {
         let searchValue = this.shadowRoot.getElementById("search-input-id").value
-        this.shadowRoot.getElementById("search-input-id").value = ""
-        alert(searchValue)
+
+        let searchFired = new CustomEvent("searchFired", {
+            "detail": {
+                "searchValue": searchValue
+            }
+        });
+
+        document.dispatchEvent(searchFired);
     }
 }
 

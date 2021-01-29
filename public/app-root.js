@@ -1,13 +1,22 @@
-import {LitElement, html, css} from "lit-element";
+import { LitElement, html, css } from "lit-element";
 import { AppHeader } from "./header/app-header";
 import { AppHomeFavorites} from "./favorites/app-home-favorites";
 import { AppHomeDashboard } from "./dashboard/app-home-dashboard";
+import { AppCountryInfoCard } from "./country-data/app-country-info-card";
 
 export class AppRoot extends LitElement {
 
     constructor() {
         super()
-        
+        fetch('https://api.covid19api.com/summary')
+            .then(response => response.json())
+            .then(data => this.dataSummary = data);
+
+        document.addEventListener("searchFired", this.searchHandler);
+    }
+
+    searchHandler(event) {
+        alert(event.detail.searchValue)
     }
 
     static get is() {
@@ -32,9 +41,37 @@ export class AppRoot extends LitElement {
             }
             
             .dashboard-container {
-                flex: 1;
+                flex: 70%;
             }
             
+            .country-data {
+                display: grid;
+                margin-top: 16px;
+                margin-bottom: 16px;
+                
+                grid-template-columns: auto auto auto auto;
+                gap: 32px;
+            }
+
+            @media (max-width: 768px) {
+                .country-data {
+                    grid-template-columns: auto auto;
+                }
+
+                .country-data {
+                    margin: 16px;
+                }
+            }
+
+            @media (max-width: 400px) {
+                .country-data {
+                    grid-template-columns: auto;
+                }
+                
+                .country-data {
+                    margin: 16px;
+                }
+            }
         `;
     }
 
@@ -50,26 +87,35 @@ export class AppRoot extends LitElement {
                 </div>
                 
                 <div class="dashboard-container">
-                    <app-home-dashboard class="home-dashboard"></app-home-dashboard>
+                    <app-home-dashboard class="home-dashboard" .globalSummary="${this.dataSummary["Global"]}"></app-home-dashboard>
                 </div>
                 
-                
+            </div>
+
+            
+            <div class="country-data">
+                ${this.dataSummary["Countries"].map(countrySummary => html`<app-country-info-card id="${countrySummary.Slug}"
+                                                                                                  @click="${this.countryItemClickHandler}"
+                                                                                                  .countrySummary="${countrySummary}"></app-country-info-card>`)}
             </div>
             
         `;
     }
 
-    // static get properties() {
-    //     return {
-    //         text: {
-    //             type: String
-    //         },
-    //         visible: {
-    //             type: Boolean,
-    //             reflect: true
-    //         }
-    //     };
-    // }
+    static get properties() {
+        return {
+            dataSummary: {
+                type: Object
+            },
+            countriesShowing: {
+                type: Object
+            }
+        };
+    }
+
+    countryItemClickHandler(event) {
+        alert(event.target.attributes.id.value)
+    }
 
     // log() {
     //     this.dispatchEvent(new CustomEvent("log", {

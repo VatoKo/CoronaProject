@@ -61,10 +61,10 @@ export class AppHomeFavorites extends LitElement {
                 background-color: #fefefe;
                 /*height: 480px;*/
                 border-radius: 25px;
-                box-shadow: 5px 5px 8px #888888;
+                box-shadow: 0 0 8px #888888;
             }
 
-            @media (max-width: 800px) {
+            @media (max-width: 1200px) {
                 :host {
                     display: none;
                 }
