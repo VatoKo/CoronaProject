@@ -4,45 +4,11 @@ export class AppHomeFavorites extends LitElement {
 
     constructor() {
         super();
-        this.favoriteCountries = {
-            countries: [
-                {
-                    "Country": "Maldives",
-                    "Slug": "maldives",
-                    "ISO2": "MV"
-                },
-                {
-                    "Country": "Palau",
-                    "Slug": "palau",
-                    "ISO2": "PW"
-                },
-                {
-                    "Country": "Papua New Guinea",
-                    "Slug": "papua-new-guinea",
-                    "ISO2": "PG"
-                },
-                {
-                    "Country": "Saudi Arabia",
-                    "Slug": "saudi-arabia",
-                    "ISO2": "SA"
-                },
-                {
-                    "Country": "Ukraine",
-                    "Slug": "ukraine",
-                    "ISO2": "UA"
-                },
-                {
-                    "Country": "Azerbaijan",
-                    "Slug": "azerbaijan",
-                    "ISO2": "AZ"
-                },
-                {
-                    "Country": "Madagascar",
-                    "Slug": "madagascar",
-                    "ISO2": "MG"
-                }
-            ]
-        };
+        this.favoriteCountries = JSON.parse(localStorage.getItem("favorites")) ?? [];
+
+        document.addEventListener("favoritesFired", () => {
+            this.favoriteCountries = JSON.parse(localStorage.getItem("favorites"));
+        });
     }
 
     static get is() {
@@ -79,6 +45,12 @@ export class AppHomeFavorites extends LitElement {
                 color: #303e4c;
             }
             
+            .empty-favorites-icon {
+                width: 40px;
+                height: 40px;
+                padding: 16px;
+            }
+            
             .favorites-list {
                 margin: 8px 32px 16px 32px;
                 flex: 98%;
@@ -101,11 +73,24 @@ export class AppHomeFavorites extends LitElement {
         // language=html
         return html`
             <h3 class="favorites-title">Favorites</h3>
-            <ul class="favorites-list">
-                ${this.favoriteCountries.countries.map(country => html`<li id="${country.Slug}"
-                                                                           class="favorites-list-item"
-                                                                           @click="${this.itemClickHandler}">${country.Country}</li>`)}
-            </ul>
+            
+            ${
+                this.favoriteCountries.length === 0 
+                ? html`
+                    <img class="empty-favorites-icon"
+                         src="https://cdn1.iconfinder.com/data/icons/pixel-perfect-at-16px-volume-1/16/5082-512.png"
+                         alt=""/>
+                `
+                : html`
+                    <ul class="favorites-list">
+                        ${this.favoriteCountries.map(country => html`<li id="${country["slug"]}"
+                                                     class="favorites-list-item"
+                                                     @click="${this.itemClickHandler}">${country["country"]}</li>`)}
+                    </ul>
+                `
+            }
+            
+            
         `;
     }
 

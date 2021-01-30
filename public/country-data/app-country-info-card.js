@@ -108,7 +108,7 @@ export class AppCountryInfoCard extends LitElement {
             <div class="card-header">
                 <h3 class="country-card-title">${this.countrySummary.Country}</h3>
                 <img class="favorite-icon"
-                     src="https://icons-for-free.com/iconfiles/png/512/heart-131965017458786724.png"
+                     src=${this.getFavoriteIconUrl()}
                      @click="${this.favoriteButtonClickHandler}"
                      alt=""/>
             </div>
@@ -155,7 +155,43 @@ export class AppCountryInfoCard extends LitElement {
     }
 
     favoriteButtonClickHandler(event) {
-        event.target.src = "https://upload.wikimedia.org/wikipedia/commons/thumb/f/f1/Heart_corazón.svg/1200px-Heart_corazón.svg.png"
+        event.stopPropagation()
+
+        let favoritesString = localStorage.getItem("favorites")
+        let favorites = favoritesString === null ? [] : JSON.parse(favoritesString);
+        let countryItem = {
+            "country": this.countrySummary.Country,
+            "slug": this.countrySummary.Slug
+        };
+
+        let favoritesContainsElement = favorites.filter(item => item.slug === this.countrySummary.Slug).length !== 0;
+
+        if (favoritesContainsElement) {
+            favorites = favorites.filter(item => item.slug !== this.countrySummary.Slug);
+            event.target.src = "https://icons-for-free.com/iconfiles/png/512/heart-131965017458786724.png";
+        } else {
+            favorites.push(countryItem)
+            event.target.src = "https://upload.wikimedia.org/wikipedia/commons/thumb/f/f1/Heart_corazón.svg/1200px-Heart_corazón.svg.png";
+        }
+
+        let updatedFavoritesString = JSON.stringify(favorites);
+        localStorage.setItem('favorites', updatedFavoritesString);
+
+        let favoritesFired = new CustomEvent("favoritesFired", {});
+        document.dispatchEvent(favoritesFired);
+
+    }
+
+    getFavoriteIconUrl() {
+        let favoriteCountries = JSON.parse(localStorage.getItem("favorites")) ?? [];
+
+        let favoritesContainsElement = favoriteCountries.filter(item => item.slug === this.countrySummary.Slug).length !== 0;
+
+        if (favoritesContainsElement) {
+            return "https://upload.wikimedia.org/wikipedia/commons/thumb/f/f1/Heart_corazón.svg/1200px-Heart_corazón.svg.png";
+        } else {
+            return "https://icons-for-free.com/iconfiles/png/512/heart-131965017458786724.png";
+        }
     }
 
 }
