@@ -2,22 +2,27 @@ import { LitElement, html, css } from "lit-element";
 import { AppHomeFavorites} from "../favorites/app-home-favorites";
 import { AppHomeDashboard } from "../dashboard/app-home-dashboard";
 import { AppCountryInfoCard } from "../country-data/app-country-info-card";
+import { Router } from 'lit-elem-router/public/router';
 
 export class AppHome extends LitElement {
 
     constructor() {
         super()
-        document.addEventListener("searchFired", this.searchHandler);
-    }
-
-    searchHandler(event) {
-        alert(event.detail.searchValue)
+        document.addEventListener("searchFired", (event) => {
+            this.countries = this.dataSummary["Countries"].filter(country => country.Country
+                                                                    .toLowerCase()
+                                                                    .startsWith(event.detail.searchValue
+                                                                                            .toLowerCase()));
+        });
     }
 
     firstUpdated(_changedProperties) {
         fetch('https://api.covid19api.com/summary')
             .then(response => response.json())
-            .then(data => this.dataSummary = data)
+            .then(data => {
+                this.dataSummary = data;
+                this.countries = data["Countries"];
+            })
             .catch((error) => {
                 this.dataSummary = {
                     "ID": "",
@@ -32,7 +37,8 @@ export class AppHome extends LitElement {
                         "TotalRecovered": 0
                     },
                     "Countries": []
-                }
+                };
+                this.countries = [];
                 alert("Failed to fetch data: " + error);
             })
     }
@@ -54,10 +60,6 @@ export class AppHome extends LitElement {
                 flex-direction: row;
             }
             
-            .home-favorites {
-                
-            }
-            
             .dashboard-container {
                 flex: 70%;
             }
@@ -71,6 +73,19 @@ export class AppHome extends LitElement {
                 gap: 32px;
             }
 
+            @media (max-width: 1200px) {
+                .home-favorites {
+                    display: flex;
+                    margin-top: 32px;
+                    margin-left: 16px;
+                    margin-right: 16px;
+                }
+
+                .home-container {
+                    flex-direction: column-reverse;
+                }
+            }
+            
             @media (max-width: 768px) {
                 .country-data {
                     grid-template-columns: auto auto;
@@ -79,6 +94,7 @@ export class AppHome extends LitElement {
                 .country-data {
                     margin: 16px;
                 }
+                
             }
 
             @media (max-width: 400px) {
@@ -118,7 +134,6 @@ export class AppHome extends LitElement {
                     transform: rotate(360deg);
                 }
             }
-            
         `;
     }
 
@@ -142,7 +157,8 @@ export class AppHome extends LitElement {
                 </div>
 
                 <div class="country-data">
-                    ${this.dataSummary["Countries"].map(countrySummary => html`
+                    ${this.countries.map(countrySummary => html`
+                        
                         <app-country-info-card id="${countrySummary.Slug}"
                                                @click="${this.countryItemClickHandler}"
                                                .countrySummary="${countrySummary}"></app-country-info-card>
@@ -157,11 +173,14 @@ export class AppHome extends LitElement {
             dataSummary: {
                 type: Object
             },
+            countries: {
+                type: Object
+            }
         };
     }
 
     countryItemClickHandler(event) {
-        alert(event.target.attributes.id.value)
+        Router.navigate(`/details/${event.target.attributes.id.value}`);
     }
 
 }

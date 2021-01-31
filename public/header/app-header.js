@@ -45,6 +45,7 @@ export class AppHeader extends LitElement {
                 alignment: center;
                 font-family: Futura;
                 font-size: 32px;
+                cursor: pointer;
             }
             
             .search-container {
@@ -93,7 +94,7 @@ export class AppHeader extends LitElement {
             <div class="header">
                 <img class="header-logo" src="https://image.flaticon.com/icons/png/512/2739/2739948.png" alt=""/>
                 
-                <p class="header-title">Corona Statistics</p>
+                <p class="header-title" @click="${this.titleClickHandler}">Corona Statistics</p>
                 
                 <div class="search-container">
                     <input id="search-input-id" class="search-input" type="text" placeholder="Search..."/>
@@ -116,6 +117,10 @@ export class AppHeader extends LitElement {
         });
 
         document.dispatchEvent(searchFired);
+    }
+
+    titleClickHandler() {
+        location.reload();
     }
 }
 

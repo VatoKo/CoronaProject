@@ -2571,6 +2571,7 @@ class AppHeader extends LitElement {
                 alignment: center;
                 font-family: Futura;
                 font-size: 32px;
+                cursor: pointer;
             }
             
             .search-container {
@@ -2619,7 +2620,7 @@ class AppHeader extends LitElement {
             <div class="header">
                 <img class="header-logo" src="https://image.flaticon.com/icons/png/512/2739/2739948.png" alt=""/>
                 
-                <p class="header-title">Corona Statistics</p>
+                <p class="header-title" @click="${this.titleClickHandler}">Corona Statistics</p>
                 
                 <div class="search-container">
                     <input id="search-input-id" class="search-input" type="text" placeholder="Search..."/>
@@ -2642,6 +2643,10 @@ class AppHeader extends LitElement {
         });
 
         document.dispatchEvent(searchFired);
+    }
+
+    titleClickHandler() {
+        location.reload();
     }
 }
 
@@ -2672,14 +2677,13 @@ class AppHomeFavorites extends LitElement {
                 align-items: center;
                 margin-right: 8px;
                 background-color: #fefefe;
-                /*height: 480px;*/
                 border-radius: 25px;
                 box-shadow: 0 0 8px #888888;
             }
 
             @media (max-width: 1200px) {
                 :host {
-                    display: none;
+                    /*display: none;*/
                 }
             }
             
@@ -2710,7 +2714,18 @@ class AppHomeFavorites extends LitElement {
                 font-family: Futura;
             }
             
+            .favorite-item-a {
+                color: #ffa400;
+                cursor: pointer;
+                font-family: Futura;
+                text-decoration: none;
+            }
+            
             .favorites-list-item:hover {
+                color: #dd9e30;
+            }
+            
+            .favorite-item-a:hover {
                 color: #dd9e30;
             }
         `;
@@ -2730,14 +2745,14 @@ class AppHomeFavorites extends LitElement {
                 `
                 : html`
                     <ul class="favorites-list">
-                        ${this.favoriteCountries.map(country => html`<li id="${country["slug"]}"
-                                                     class="favorites-list-item"
-                                                     @click="${this.itemClickHandler}">${country["country"]}</li>`)}
+                        ${this.favoriteCountries.map(country => html`
+                            <li id="${country["slug"]}"
+                                class="favorites-list-item">
+                                <a href="/details/${country["slug"]}" class="favorite-item-a">${country["country"]}</a>
+                            </li>`)}
                     </ul>
                 `
             }
-            
-            
         `;
     }
 
@@ -2747,10 +2762,6 @@ class AppHomeFavorites extends LitElement {
                 type: Object
             }
         };
-    }
-
-    itemClickHandler(event) {
-        alert(event.target.attributes.id.value);
     }
 
 }
@@ -2784,6 +2795,9 @@ class AppInfoCard extends LitElement {
                 background-color: #fefefe;
                 border-radius: 50%;
                 margin: 32px;
+                -moz-box-shadow:    inset 0 0 10px #000000;
+                -webkit-box-shadow: inset 0 0 10px #000000;
+                box-shadow:         inset 0 0 10px #000000;
             }
             
             .info-card-icon {
@@ -3175,21 +3189,47 @@ class AppCountryInfoCard extends LitElement {
 
 customElements.define(AppCountryInfoCard.is, AppCountryInfoCard);
 
+class Router {
+    static navigate(path, queryParams = '', hash = '') {
+        this._dispatchEvent('navigation', {
+            pathname: path,
+            search: queryParams,
+            hash,
+        });
+    }
+
+    static back() {
+        this._dispatchEvent('back');
+    }
+
+    static _dispatchEvent(type, detail = {}) {
+        const event = new CustomEvent(`lit-router-${type}`, {
+            detail
+        });
+
+        window.document.dispatchEvent(event);
+    }
+}
+
 class AppHome extends LitElement {
 
     constructor() {
         super();
-        document.addEventListener("searchFired", this.searchHandler);
-    }
-
-    searchHandler(event) {
-        alert(event.detail.searchValue);
+        document.addEventListener("searchFired", (event) => {
+            this.countries = this.dataSummary["Countries"].filter(country => country.Country
+                                                                    .toLowerCase()
+                                                                    .startsWith(event.detail.searchValue
+                                                                                            .toLowerCase()));
+        });
     }
 
     firstUpdated(_changedProperties) {
         fetch('https://api.covid19api.com/summary')
             .then(response => response.json())
-            .then(data => this.dataSummary = data)
+            .then(data => {
+                this.dataSummary = data;
+                this.countries = data["Countries"];
+            })
             .catch((error) => {
                 this.dataSummary = {
                     "ID": "",
@@ -3205,6 +3245,7 @@ class AppHome extends LitElement {
                     },
                     "Countries": []
                 };
+                this.countries = [];
                 alert("Failed to fetch data: " + error);
             });
     }
@@ -3226,10 +3267,6 @@ class AppHome extends LitElement {
                 flex-direction: row;
             }
             
-            .home-favorites {
-                
-            }
-            
             .dashboard-container {
                 flex: 70%;
             }
@@ -3243,6 +3280,19 @@ class AppHome extends LitElement {
                 gap: 32px;
             }
 
+            @media (max-width: 1200px) {
+                .home-favorites {
+                    display: flex;
+                    margin-top: 32px;
+                    margin-left: 16px;
+                    margin-right: 16px;
+                }
+
+                .home-container {
+                    flex-direction: column-reverse;
+                }
+            }
+            
             @media (max-width: 768px) {
                 .country-data {
                     grid-template-columns: auto auto;
@@ -3251,6 +3301,7 @@ class AppHome extends LitElement {
                 .country-data {
                     margin: 16px;
                 }
+                
             }
 
             @media (max-width: 400px) {
@@ -3290,7 +3341,6 @@ class AppHome extends LitElement {
                     transform: rotate(360deg);
                 }
             }
-            
         `;
     }
 
@@ -3314,7 +3364,8 @@ class AppHome extends LitElement {
                 </div>
 
                 <div class="country-data">
-                    ${this.dataSummary["Countries"].map(countrySummary => html`
+                    ${this.countries.map(countrySummary => html`
+                        
                         <app-country-info-card id="${countrySummary.Slug}"
                                                @click="${this.countryItemClickHandler}"
                                                .countrySummary="${countrySummary}"></app-country-info-card>
@@ -3329,16 +3380,337 @@ class AppHome extends LitElement {
             dataSummary: {
                 type: Object
             },
+            countries: {
+                type: Object
+            }
         };
     }
 
     countryItemClickHandler(event) {
-        alert(event.target.attributes.id.value);
+        Router.navigate(`/details/${event.target.attributes.id.value}`);
     }
 
 }
 
 customElements.define(AppHome.is, AppHome);
+
+class AppCountrySummaryCard extends LitElement {
+
+    static get is() {
+        return 'app-country-summary-card'
+    }
+
+    static get styles() {
+        // language=css
+        return css`
+            :host {
+                display: grid;
+                grid-template-columns: auto auto auto;
+                background-color: #fefefe;
+                border-radius: 25px;
+                box-shadow: 0 0 8px #888888;
+            }
+            
+            .chip {
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+                align-items: center;
+                width: 200px;
+                border-radius: 100px;
+                padding: 8px 16px;
+                margin: 16px 8px;
+                -moz-box-shadow:    inset 0 0 10px #000000;
+                -webkit-box-shadow: inset 0 0 10px #000000;
+                box-shadow:         inset 0 0 10px #000000;
+            }
+            
+            .chip-title {
+                font-family: Futura;
+                color: #fefefe;
+                font-size: 16px;
+                margin: 0;
+                text-align: center;
+            }
+            
+            .chip-value {
+                font-family: Futura;
+                color: #fefefe;
+                font-size: 16px;
+                margin-top: 8px;
+                text-align: center;
+            }
+
+            @media (max-width: 400px) {
+                :host {
+                    grid-template-columns: auto;
+                    margin: 0 16px;
+                }
+                
+                .chip {
+                    margin: 16px auto;
+                }
+            }
+        `;
+    }
+
+    render() {
+        // language=html
+        return html`
+           <div class="chip" style="background-color: #06a74c">
+               <h4 class="chip-title">New Recovered</h4>
+               <p class="chip-value">${this.countrySummary.NewRecovered}</p>
+           </div>
+
+           <div class="chip" style="background-color: #ffbd23">
+               <h4 class="chip-title">New Confirmed</h4>
+               <p class="chip-value">${this.countrySummary.NewConfirmed}</p>
+           </div>
+
+           <div class="chip" style="background-color: #e22820">
+               <h4 class="chip-title">New Deaths</h4>
+               <p class="chip-value">${this.countrySummary.NewDeaths}</p>
+           </div>
+
+           <div class="chip" style="background-color: #06a74c">
+               <h4 class="chip-title">Total Recovered</h4>
+               <p class="chip-value">${this.countrySummary.TotalRecovered}</p>
+           </div>
+
+           <div class="chip" style="background-color: #ffbd23">
+               <h4 class="chip-title">Total Confirmed</h4>
+               <p class="chip-value">${this.countrySummary.TotalConfirmed}</p>
+           </div>
+
+           <div class="chip" style="background-color: #e22820">
+               <h4 class="chip-title">Total Deaths</h4>
+               <p class="chip-value">${this.countrySummary.TotalDeaths}</p>
+           </div>
+        `;
+    }
+
+    static get properties() {
+        return {
+            countrySummary: {
+                type: Object
+            }
+        };
+    }
+
+}
+
+customElements.define(AppCountrySummaryCard.is, AppCountrySummaryCard);
+
+class AppCountryDetails extends LitElement {
+
+    firstUpdated(_changedProperties) {
+        this.fetchSummary();
+        // this.fetchConfirmedCases();
+        // this.fetchRecoveryData();
+        // this.fetchDeathCases();
+    }
+
+    fetchSummary() {
+        fetch('https://api.covid19api.com/summary')
+            .then(response => response.json())
+            .then(data => {
+                this.countrySummary = data["Countries"].filter(item => item.Slug === this.routeParams.slug)[0];
+            })
+            .catch((error) => {
+                this.countrySummary = {
+                    "ID": "",
+                    "Country": "",
+                    "CountryCode": "",
+                    "Slug": "",
+                    "NewConfirmed": 0,
+                    "TotalConfirmed": 0,
+                    "NewDeaths": 0,
+                    "TotalDeaths": 0,
+                    "NewRecovered": 0,
+                    "TotalRecovered": 0,
+                    "Date": "",
+                    "Premium": {}
+                };
+                alert("Failed to fetch data: " + error);
+            });
+    }
+
+    fetchConfirmedCases() {
+        fetch(`https://api.covid19api.com/dayone/country/${this.routeParams.slug}/status/confirmed`)
+            .then(response => response.json())
+            .then(data => {
+                this.confirmedCases = data;
+                console.log(data);
+            })
+            .catch((error) => {
+                this.confirmedCases = [];
+                alert("Failed to fetch data: " + error);
+            });
+    }
+
+
+
+    fetchRecoveryData() {
+        fetch(`https://api.covid19api.com/dayone/country/${this.routeParams.slug}/status/recovered`)
+            .then(response => response.json())
+            .then(data => {
+                this.recoveryCases = data;
+                console.log(data);
+            })
+            .catch((error) => {
+                this.recoveryCases = [];
+                alert("Failed to fetch data: " + error);
+            });
+    }
+
+    fetchDeathCases() {
+        fetch(`https://api.covid19api.com/dayone/country/${this.routeParams.slug}/status/deaths`)
+            .then(response => response.json())
+            .then(data => {
+                this.deathCases = data;
+                console.log(data);
+            })
+            .catch((error) => {
+                this.deathCases = [];
+                alert("Failed to fetch data: " + error);
+            });
+    }
+
+    static get is() {
+        return 'app-country-details'
+    }
+
+    static get styles() {
+        // language=css
+        return css`
+            :host {
+                display: block;
+            }
+            
+            .details-title-container {
+                background-color: #fefefe;
+                border-radius: 25px;
+                box-shadow: 0 0 8px #888888;
+                padding: 16px;
+                margin: 16px 0;
+                
+                color: #2a3642;
+                font-family: Futura;
+                text-align: center;
+            }
+            
+            .details-container {
+                display: grid;
+                grid-template-columns: auto auto;
+                gap: 16px;
+            }
+            
+            .layer {
+                background-color: #fefefe;
+                border-radius: 25px;
+                box-shadow: 0 0 8px #888888;
+            }
+
+            /* Loader is from this site: https://loading.io/css/ */
+            .lds-dual-ring {
+                display: block;
+                width: 80px;
+                height: 80px;
+                margin: auto;
+                padding: 72px;
+            }
+            .lds-dual-ring:after {
+                content: " ";
+                display: block;
+                width: 64px;
+                height: 64px;
+                margin: 8px;
+                border-radius: 50%;
+                border: 6px solid #303e4c;
+                border-color: #303e4c transparent #303e4c transparent;
+                animation: lds-dual-ring 1.2s linear infinite;
+            }
+            @keyframes lds-dual-ring {
+                0% {
+                    transform: rotate(0deg);
+                }
+                100% {
+                    transform: rotate(360deg);
+                }
+            }
+
+            @media (max-width: 800px) {
+                .details-container {
+                    grid-template-columns: auto;
+                }
+
+                .details-title-container {
+                    margin: 16px 16px;
+                }
+            }
+        `;
+    }
+
+    render() {
+        // language=html
+
+        // if (this.confirmedCases === undefined || this.recoveryCases === undefined || this.deathCases === undefined) {
+        //     return html`<div class="lds-dual-ring"></div>`;
+        // } else {
+        //     return html`
+        //         <h1>${this.confirmedCases[0].Cases}</h1>
+        //         <h1>${this.recoveryCases[0].Cases}</h1>
+        //         <h1>${this.deathCases[0].Cases}</h1>
+        //     `;
+        // }
+
+        // Change this to 'equals'
+        if (this.countrySummary === undefined) {
+            return html`<div class="lds-dual-ring"></div>`;
+        } else {
+            return html`
+                
+                <div class="details-title-container">
+                    <h1>${this.countrySummary.Country}</h1>
+                </div>
+                
+                <div class="details-container">
+                    <app-country-summary-card .countrySummary="${this.countrySummary}"></app-country-summary-card>
+                    <div class="layer"><h1>To be implemented</h1></div>
+                    <div class="layer"><h1>To be implemented</h1></div>
+                    <div class="layer"><h1>To be implemented</h1></div>
+                </div>
+            `;
+        }
+    }
+
+    static get properties() {
+        return {
+            routeParams: {
+                type: Object,
+            },
+            countrySummary: {
+                type: Object
+            },
+            confirmedCases: {
+                type: Object
+            },
+            recoveryCases: {
+                type: Object
+            },
+            deathCases: {
+                type: Object
+            }
+        };
+    }
+
+}
+
+customElements.define(AppCountryDetails.is, AppCountryDetails);
+
+class i extends LitElement{static get is(){return "lit-route"}static get styles(){return css`:host{display:block}`}static get properties(){return {path:{type:String},tagName:{type:String,reflect:!0,attribute:"tag-name"},active:{type:Boolean,reflect:!0},_node:{type:Object}}}activate(t={},e={}){this.active=!0,this._node||(this._node=this._createNode()),this._setParams(this.path,t,e),this._notifyActivation();}deactivate(){this.active=!1,this._node&&(this._removeNode(),this._node=null),this._notifyDeactivation();}_createNode(){const t=document.createElement(this.tagName);return this.shadowRoot.appendChild(t),t}_removeNode(){this.shadowRoot.innerHTML="";}_setParams(t,e,i){const a=this._node;a.routePath="string"==typeof t?t:"",a.routeParams="object"==typeof e?e:{},a.routeQueryParams="object"==typeof i?i:{};}_notifyActivation(){this.dispatchEvent(new CustomEvent("activate",{detail:{path:this.path,tagName:this.tagName,node:this._node}}));}_notifyDeactivation(){this.dispatchEvent(new CustomEvent("deactivate"));}}customElements.define(i.is,i);
+
+class s{static get PARAM_REGEX(){return /^:[A-Za-z_]+[A-Za-z0-9_]*$/}static isMatchingPath(t,e){const a=s.pathToFragments(t),n=s.pathToFragments(e);if(a.length>n.length)return !1;for(let t=0;t<a.length;t++){const e=a[t],i=n[t],r=s.isFragmentMatching(e,i),o=!(t===a.length-1)&&s.isFragmentFallback(e);if(!(r||o))return !1}return !0}static isFallbackPath(t,e){const a=s.pathToFragments(t),n=s.pathToFragments(e);if(a.length>n)return !1;if(!s.isFragmentFallback(a[a.length-1]))return !1;for(let t=0;t<a.length-1;t++){const e=a[t],i=n[t],r=s.isFragmentMatching(e,i),o=s.isFragmentFallback(e);if(!(r||o))return !1}return !0}static isFragmentMatching(t,e){return !!s.isFragmentParam(t)||t===e}static isFragmentParam(t){return t&&t.match(s.PARAM_REGEX)}static isFragmentFallback(t){return "**"===t}static pathToFragments(t){return t?s.removeQueryParams(t).split("/").filter((t=>!!t)):[]}static getFragmentCount(t){return s.pathToFragments(t).length}static removeQueryParams(t){return t.includes("?")?t.substring(0,t.indexOf("?")):t}static parseQueryParams(t){return t?t.substring(t.indexOf("?")+1,t.length).split("&").filter((t=>!!t)).map((t=>t.split("="))).reduce(((t,[e,a])=>({...t,[e]:a})),{}):{}}static getParamName(t){return t.replace(":","")}static getParams(t,e){const a=s.pathToFragments(t),n=s.pathToFragments(e);return a.map(((t,e)=>({fragment:t,index:e}))).filter((({fragment:t,index:e})=>s.isFragmentParam(t))).reduce(((t,{fragment:e,index:a})=>({...t,[s.getParamName(e)]:n[a]})),{})}}class i$1{constructor(){this._listeners=new Set;}subscribe(t){return this._listeners.add(t),new r(this,t)}next(...t){this._listeners.forEach((e=>e(...t)));}}class r{constructor(t,e){this._observable=t,this._callback=e;}unsubscribe(){this._observable._listeners.delete(this._callback);}}class o{static getInstance(){return o._INSTANCE||(o._INSTANCE=new h),o._INSTANCE}}class h{constructor(){this.navigation$=new i$1,this._path=location.pathname,this._queryParams=location.search,this._hash=location.hash,this._listenToNavigation();}onNavigation(t){return t(this._path,this._queryParams,this._hash),this.navigation$.subscribe(t)}_listenToNavigation(){window.document.addEventListener("click",(t=>function(t,e){if(t.defaultPrevented)return;if(0!==t.button)return;if(t.shiftKey||t.ctrlKey||t.altKey||t.metaKey)return;let a=t.target;const n=t.composedPath?t.composedPath():t.path||[];for(let t=0;t<n.length;t++){const e=n[t];if(e.nodeName&&"a"===e.nodeName.toLowerCase()){a=e;break}}for(;a&&"a"!==a.nodeName.toLowerCase();)a=a.parentNode;if(!a||"a"!==a.nodeName.toLowerCase())return;if(a.target&&"_self"!==a.target.toLowerCase())return;if(a.hasAttribute("download"))return;if(a.pathname===window.location.pathname&&""!==a.hash)return;if((a.origin||function(t){const e=t.port,a=t.protocol;return `${a}//${"http:"===a&&"80"===e||"https:"===a&&"443"===e?t.hostname:t.host}`}(a))!==window.location.origin)return;const{pathname:s,search:i,hash:r}=a;t.preventDefault(),e(s,i,r);}(t,this._onNavigation.bind(this)))),window.document.addEventListener("lit-router-navigation",(t=>function(t,e){const{pathname:a,search:n,hash:s}=t.detail;e(a,n,s);}(t,this._onNavigation.bind(this)))),window.addEventListener("popstate",(t=>function(t,e){const{pathname:a,search:n,hash:s}=window.location;e(a,n,s);}(0,this._onNavigation.bind(this)))),window.document.addEventListener("lit-router-back",(t=>this._onGoBack(t)));}_onNavigation(t,e,a){this._path=t,this._queryParams=e,this._hash=a,this.navigation$.next(this._path,this._queryParams),this._updateBrowserHistory(t,e,a);}_updateBrowserHistory(t,e="",a="",n){if(window.location.pathname!==t||window.location.search!==e||window.location.hash!==a){const s=n?"replaceState":"pushState";window.history[s](null,document.title,t+e+a);}}_onGoBack(){window.history.back();}}class c extends LitElement{static get is(){return "lit-router"}static get styles(){return css`:host{display:block}`}render(){return html`<slot id="route-slot"></slot>`}static get properties(){return {}}firstUpdated(t){super.firstUpdated(t),this._subscription=o.getInstance().onNavigation(this._navigate.bind(this));}disconnectedCallback(){super.disconnectedCallback(),this._subscription.unsubscribe();}_navigate(t,e){const a=this._getRouteNodes(),n=this._findRouteToActivate(a,t);if(a.forEach((t=>{t===n||t.deactivate();})),n){const a=s.getParams(n.path,t),i=s.parseQueryParams(e);n.activate(a,i);}}_findRouteToActivate(t,e){const a=t.filter((t=>this._isMatchingPath(t.path,e))),n=this._getLongestMatch(a);if(n)return n;const s=t.filter((t=>this._isFallback(t.path,e)));return this._getLongestMatch(s)}_getLongestMatch(t){return t.map((t=>({node:t,count:s.getFragmentCount(t.path)}))).reduce(((t,e)=>t.count<e.count?e:t),{node:null,count:-1}).node}_isMatchingPath(t,e){return s.isMatchingPath(t,e)}_isFallback(t,e){return s.isFallbackPath(t,e)}_isRouteNode(t){return t.nodeName===i.is.toUpperCase()}_getRouteNodes(){return this.shadowRoot.getElementById("route-slot").assignedNodes().filter(this._isRouteNode)}}customElements.define(c.is,c);
 
 class AppRoot extends LitElement {
 
@@ -3365,7 +3737,10 @@ class AppRoot extends LitElement {
         return html`
             <app-header></app-header>
             
-            <app-home></app-home>
+            <lit-router>
+                <lit-route path="/" tag-name="app-home"></lit-route>
+                <lit-route path="/details/:slug" tag-name="app-country-details"></lit-route>
+            </lit-router>
         `;
     }
 

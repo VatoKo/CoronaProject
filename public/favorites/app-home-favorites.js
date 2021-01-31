@@ -25,14 +25,13 @@ export class AppHomeFavorites extends LitElement {
                 align-items: center;
                 margin-right: 8px;
                 background-color: #fefefe;
-                /*height: 480px;*/
                 border-radius: 25px;
                 box-shadow: 0 0 8px #888888;
             }
 
             @media (max-width: 1200px) {
                 :host {
-                    display: none;
+                    /*display: none;*/
                 }
             }
             
@@ -63,7 +62,18 @@ export class AppHomeFavorites extends LitElement {
                 font-family: Futura;
             }
             
+            .favorite-item-a {
+                color: #ffa400;
+                cursor: pointer;
+                font-family: Futura;
+                text-decoration: none;
+            }
+            
             .favorites-list-item:hover {
+                color: #dd9e30;
+            }
+            
+            .favorite-item-a:hover {
                 color: #dd9e30;
             }
         `;
@@ -83,14 +93,14 @@ export class AppHomeFavorites extends LitElement {
                 `
                 : html`
                     <ul class="favorites-list">
-                        ${this.favoriteCountries.map(country => html`<li id="${country["slug"]}"
-                                                     class="favorites-list-item"
-                                                     @click="${this.itemClickHandler}">${country["country"]}</li>`)}
+                        ${this.favoriteCountries.map(country => html`
+                            <li id="${country["slug"]}"
+                                class="favorites-list-item">
+                                <a href="/details/${country["slug"]}" class="favorite-item-a">${country["country"]}</a>
+                            </li>`)}
                     </ul>
                 `
             }
-            
-            
         `;
     }
 
@@ -100,10 +110,6 @@ export class AppHomeFavorites extends LitElement {
                 type: Object
             }
         };
-    }
-
-    itemClickHandler(event) {
-        alert(event.target.attributes.id.value)
     }
 
 }

@@ -27,6 +27,9 @@ export class AppInfoCard extends LitElement {
                 background-color: #fefefe;
                 border-radius: 50%;
                 margin: 32px;
+                -moz-box-shadow:    inset 0 0 10px #000000;
+                -webkit-box-shadow: inset 0 0 10px #000000;
+                box-shadow:         inset 0 0 10px #000000;
             }
             
             .info-card-icon {
