@@ -3410,21 +3410,20 @@ class AppCountrySummaryCard extends LitElement {
                 border-radius: 25px;
                 box-shadow: 0 0 8px #888888;
             }
-            
+
             .chip {
                 display: flex;
                 flex-direction: column;
                 justify-content: center;
                 align-items: center;
-                width: 200px;
                 border-radius: 100px;
                 padding: 8px 16px;
                 margin: 16px 8px;
-                -moz-box-shadow:    inset 0 0 10px #000000;
-                -webkit-box-shadow: inset 0 0 10px #000000;
-                box-shadow:         inset 0 0 10px #000000;
+                -moz-box-shadow: inset 0 0 10px #444444;
+                -webkit-box-shadow: inset 0 0 10px #444444;
+                box-shadow: inset 0 0 10px #444444;
             }
-            
+
             .chip-title {
                 font-family: Futura;
                 color: #fefefe;
@@ -3432,7 +3431,7 @@ class AppCountrySummaryCard extends LitElement {
                 margin: 0;
                 text-align: center;
             }
-            
+
             .chip-value {
                 font-family: Futura;
                 color: #fefefe;
@@ -3441,14 +3440,21 @@ class AppCountrySummaryCard extends LitElement {
                 text-align: center;
             }
 
-            @media (max-width: 400px) {
+            @media (max-width: 800px) {
+                :host {
+                    margin: 0 16px;
+                }
+            }
+
+            @media (max-width: 420px) {
                 :host {
                     grid-template-columns: auto;
                     margin: 0 16px;
                 }
-                
+
                 .chip {
                     margin: 16px auto;
+                    width: 300px;
                 }
             }
         `;
@@ -3501,19 +3507,180 @@ class AppCountrySummaryCard extends LitElement {
 
 customElements.define(AppCountrySummaryCard.is, AppCountrySummaryCard);
 
+class AppLineChart extends LitElement {
+
+    static get is() {
+        return 'app-line-chart'
+    }
+
+    firstUpdated(_changedProperties) {
+        requestAnimationFrame(() => {
+            this.configureChart(this.data);
+        });
+    }
+
+    configureChart(data) {
+        let chart = this.shadowRoot.getElementById("line-canvas");
+        let ctx = chart.getContext('2d');
+        let myChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: this.data.map(item => new Date(item.Date).toLocaleDateString()),
+                datasets: [{
+                    label: this.title,
+                    data: this.data.map(item => item.Cases),
+                    backgroundColor: this.data.map(() => this.backgroundColor),
+                    borderColor: this.data.map(() => this.borderColor),
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                scales: {
+                    yAxes: [{
+                        ticks: {
+                            beginAtZero: true
+                        }
+                    }]
+                }
+            }
+        });
+    }
+
+    static get styles() {
+        // language=css
+        return css`
+            :host {
+                display: flex;
+                justify-content: center;
+            }
+            
+            .no-data-icon {
+                margin: 0 auto;
+                width: 100px;
+                height: 100px;
+            }
+        `;
+    }
+
+    render() {
+        // language=html
+        if (this.data === undefined || this.data.length === 0) {
+            return html`<img class="no-data-icon"
+                             src="https://cdn1.iconfinder.com/data/icons/pixel-perfect-at-16px-volume-1/16/5082-512.png"
+                             alt=""/>`;
+        } else {
+            return html`<canvas id="line-canvas"></canvas>`;
+        }
+    }
+
+    static get properties() {
+        return {
+            data: {
+                type: Object,
+            },
+            title: {
+                type: String
+            },
+            backgroundColor: {
+                type: String
+            },
+            borderColor: {
+                type: String
+            },
+        };
+    }
+
+}
+
+customElements.define(AppLineChart.is, AppLineChart);
+
+class AppPieChart extends LitElement {
+
+    static get is() {
+        return 'app-pie-chart'
+    }
+
+    firstUpdated(_changedProperties) {
+        requestAnimationFrame(() => {
+            this.configureChart();
+        });
+    }
+
+    configureChart() {
+        let chart = this.shadowRoot.getElementById("pie-canvas");
+        let ctx = chart.getContext('2d');
+        let myChart = new Chart(ctx, {
+            type: 'pie',
+            data: {
+                labels: this.labels,
+                datasets: [{
+                    label: this.title,
+                    data: this.data,
+                    backgroundColor: this.backgroundColors,
+                    borderColor: this.borderColors,
+                    borderWidth: 1
+                }]
+            },
+            options: {}
+        });
+    }
+
+    static get styles() {
+        // language=css
+        return css`
+            :host {
+                display: block;
+            }
+        `;
+    }
+
+    render() {
+        // language=html
+        if (this.data === undefined) {
+            return html``;
+        } else {
+            return html`<canvas id="pie-canvas"></canvas>`;
+        }
+    }
+
+    static get properties() {
+        return {
+            labels: {
+                type: Object
+            },
+            data: {
+                type: Object,
+            },
+            title: {
+                type: String
+            },
+            backgroundColors: {
+                type: Object
+            },
+            borderColors: {
+                type: String
+            },
+        };
+    }
+
+}
+
+customElements.define(AppPieChart.is, AppPieChart);
+
 class AppCountryDetails extends LitElement {
 
     firstUpdated(_changedProperties) {
         this.fetchSummary();
-        // this.fetchConfirmedCases();
-        // this.fetchRecoveryData();
-        // this.fetchDeathCases();
+        this.fetchConfirmedCases();
+        this.fetchRecoveryData();
+        this.fetchDeathCases();
     }
 
     fetchSummary() {
         fetch('https://api.covid19api.com/summary')
             .then(response => response.json())
             .then(data => {
+                this.globalSummary = data["Global"];
                 this.countrySummary = data["Countries"].filter(item => item.Slug === this.routeParams.slug)[0];
             })
             .catch((error) => {
@@ -3540,11 +3707,9 @@ class AppCountryDetails extends LitElement {
             .then(response => response.json())
             .then(data => {
                 this.confirmedCases = data;
-                console.log(data);
             })
             .catch((error) => {
                 this.confirmedCases = [];
-                alert("Failed to fetch data: " + error);
             });
     }
 
@@ -3555,11 +3720,9 @@ class AppCountryDetails extends LitElement {
             .then(response => response.json())
             .then(data => {
                 this.recoveryCases = data;
-                console.log(data);
             })
             .catch((error) => {
                 this.recoveryCases = [];
-                alert("Failed to fetch data: " + error);
             });
     }
 
@@ -3568,11 +3731,9 @@ class AppCountryDetails extends LitElement {
             .then(response => response.json())
             .then(data => {
                 this.deathCases = data;
-                console.log(data);
             })
             .catch((error) => {
                 this.deathCases = [];
-                alert("Failed to fetch data: " + error);
             });
     }
 
@@ -3599,16 +3760,29 @@ class AppCountryDetails extends LitElement {
                 text-align: center;
             }
             
-            .details-container {
-                display: grid;
-                grid-template-columns: auto auto;
-                gap: 16px;
+            .charts-container {
+                display: flex;
+                flex-direction: column;
+                justify-content: space-around;
+            }
+            
+            .pie-charts-container {
+                display: flex;
+                flex-direction: row;
+                justify-content: space-around;
             }
             
             .layer {
                 background-color: #fefefe;
                 border-radius: 25px;
                 box-shadow: 0 0 8px #888888;
+                margin: 16px 0;
+                padding: 8px;
+            }
+            
+            .maps {
+                width: 400px;
+                height: 400px;
             }
 
             /* Loader is from this site: https://loading.io/css/ */
@@ -3640,12 +3814,16 @@ class AppCountryDetails extends LitElement {
             }
 
             @media (max-width: 800px) {
-                .details-container {
-                    grid-template-columns: auto;
-                }
-
                 .details-title-container {
                     margin: 16px 16px;
+                }
+
+                .layer {
+                    margin: 16px 16px;
+                }
+                
+                .pie-charts-container {
+                    flex-direction: column;
                 }
             }
         `;
@@ -3653,32 +3831,68 @@ class AppCountryDetails extends LitElement {
 
     render() {
         // language=html
-
-        // if (this.confirmedCases === undefined || this.recoveryCases === undefined || this.deathCases === undefined) {
-        //     return html`<div class="lds-dual-ring"></div>`;
-        // } else {
-        //     return html`
-        //         <h1>${this.confirmedCases[0].Cases}</h1>
-        //         <h1>${this.recoveryCases[0].Cases}</h1>
-        //         <h1>${this.deathCases[0].Cases}</h1>
-        //     `;
-        // }
-
-        // Change this to 'equals'
-        if (this.countrySummary === undefined) {
+        if (this.countrySummary === undefined || this.confirmedCases === undefined || this.recoveryCases === undefined || this.deathCases === undefined) {
             return html`<div class="lds-dual-ring"></div>`;
         } else {
             return html`
-                
                 <div class="details-title-container">
                     <h1>${this.countrySummary.Country}</h1>
                 </div>
                 
-                <div class="details-container">
+                <div class="charts-container">
                     <app-country-summary-card .countrySummary="${this.countrySummary}"></app-country-summary-card>
-                    <div class="layer"><h1>To be implemented</h1></div>
-                    <div class="layer"><h1>To be implemented</h1></div>
-                    <div class="layer"><h1>To be implemented</h1></div>
+                    
+                    <div class="pie-charts-container">
+                        
+                        <div class="layer">
+                            <app-pie-chart .labels="${["Alive", "Dead"]}"
+                                           .data="${[this.countrySummary.TotalConfirmed - this.countrySummary.TotalDeaths, this.countrySummary.TotalDeaths]}"
+                                           title="Death Rate"
+                                           .backgroundColors="${["rgba(255, 189, 35, 0.32)", "rgba(226, 40, 32, 0.32)"]}"
+                                           .borderColors="${["rgba(255, 189, 35, 1)", "rgba(226, 40, 32, 1)"]}">
+                            </app-pie-chart>
+                        </div>
+                        <div class="layer">
+                            <app-pie-chart .labels="${["Active case", "Recovered"]}"
+                                           .data="${[this.countrySummary.TotalConfirmed - this.countrySummary.TotalRecovered, this.countrySummary.TotalRecovered]}"
+                                           title="Recovery Rate"
+                                           .backgroundColors="${["rgba(255, 189, 35, 0.32)", "rgba(6, 167, 76, 0.32)"]}"
+                                           .borderColors="${["rgba(255, 189, 35, 1)", "rgba(6, 167, 76, 1)"]}">
+                            </app-pie-chart>
+                        </div>
+                        <div class="layer">
+                            <app-pie-chart .labels="${["Confirmed Globally", `Confirmed in ${this.countrySummary.Country}`]}"
+                                           .data="${[this.globalSummary.TotalConfirmed - this.countrySummary.TotalConfirmed, this.countrySummary.TotalConfirmed]}"
+                                           title="Ratio to global cases"
+                                           .backgroundColors="${["rgba(226, 40, 32, 0.32)", "rgba(6, 167, 76, 0.32)"]}"
+                                           .borderColors="${["rgba(226, 40, 32, 1)", "rgba(6, 167, 76, 1)"]}">
+                            </app-pie-chart>
+                        </div>
+                    </div>
+                    
+                    <div class="layer">
+                        <app-line-chart title="Recovered"
+                                        backgroundColor="rgba(6, 167, 76, 0.32)"
+                                        borderColor="rgba(6, 167, 76, 1)"
+                                        .data="${this.recoveryCases}">
+                        </app-line-chart>
+                    </div>
+
+                    <div class="layer">
+                        <app-line-chart title="Confirmed"
+                                        backgroundColor="rgba(255, 189, 35, 0.32)"
+                                        borderColor="rgba(255, 189, 35, 1)"
+                                        .data="${this.confirmedCases}">
+                        </app-line-chart>
+                    </div>
+
+                    <div class="layer">
+                        <app-line-chart title="Deaths"
+                                        backgroundColor="rgba(226, 40, 32, 0.32)"
+                                        borderColor="rgba(226, 40, 32, 1)"
+                                        .data="${this.deathCases}">
+                        </app-line-chart>
+                    </div>
                 </div>
             `;
         }
@@ -3687,7 +3901,10 @@ class AppCountryDetails extends LitElement {
     static get properties() {
         return {
             routeParams: {
-                type: Object,
+                type: Object
+            },
+            globalSummary: {
+                type: Object
             },
             countrySummary: {
                 type: Object

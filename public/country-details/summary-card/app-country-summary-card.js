@@ -16,21 +16,20 @@ export class AppCountrySummaryCard extends LitElement {
                 border-radius: 25px;
                 box-shadow: 0 0 8px #888888;
             }
-            
+
             .chip {
                 display: flex;
                 flex-direction: column;
                 justify-content: center;
                 align-items: center;
-                width: 200px;
                 border-radius: 100px;
                 padding: 8px 16px;
                 margin: 16px 8px;
-                -moz-box-shadow:    inset 0 0 10px #000000;
-                -webkit-box-shadow: inset 0 0 10px #000000;
-                box-shadow:         inset 0 0 10px #000000;
+                -moz-box-shadow: inset 0 0 10px #444444;
+                -webkit-box-shadow: inset 0 0 10px #444444;
+                box-shadow: inset 0 0 10px #444444;
             }
-            
+
             .chip-title {
                 font-family: Futura;
                 color: #fefefe;
@@ -38,7 +37,7 @@ export class AppCountrySummaryCard extends LitElement {
                 margin: 0;
                 text-align: center;
             }
-            
+
             .chip-value {
                 font-family: Futura;
                 color: #fefefe;
@@ -47,14 +46,21 @@ export class AppCountrySummaryCard extends LitElement {
                 text-align: center;
             }
 
-            @media (max-width: 400px) {
+            @media (max-width: 800px) {
+                :host {
+                    margin: 0 16px;
+                }
+            }
+
+            @media (max-width: 420px) {
                 :host {
                     grid-template-columns: auto;
                     margin: 0 16px;
                 }
-                
+
                 .chip {
                     margin: 16px auto;
+                    width: 300px;
                 }
             }
         `;
